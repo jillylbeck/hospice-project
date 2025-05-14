@@ -68,6 +68,36 @@
     </style>
 </head>
 <body>
+    <div id="quiz-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#121212;color:#e0e0e0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
+        <h1>How Do You Want Your Loved One to Spend Their Final Days?</h1>
+        <p>Use the preferences below to filter the map.</p>
+        <label>
+            Level of Intensive Care (CHC/GIP):
+            <select id="care-level">
+                <option value="any">Any</option>
+                <option value="high">High (&gt;=50%)</option>
+                <option value="low">Low (&lt;50%)</option>
+            </select>
+        </label>
+        <label>
+            Spending Level (Per-Beneficiary):
+            <select id="spending-level">
+                <option value="any">Any</option>
+                <option value="high">High (&gt;=$10,000)</option>
+                <option value="low">Low (&lt;$10,000)</option>
+            </select>
+        </label>
+        <label>
+            Hospice Care Index Score:
+            <select id="score-level">
+                <option value="any">Any</option>
+                <option value="high">High (&gt;=8)</option>
+                <option value="medium">Medium (5-7.9)</option>
+                <option value="low">Low (&lt;5)</option>
+            </select>
+        </label>
+        <button id="submit-quiz" style="margin-top:20px;padding:10px 20px;">View Matching Providers</button>
+    </div>
     <div id="map-container">
         <h1>Hospice Facility Map</h1>
         <p>This map shows the geographic distribution of hospices in the dataset.</p>
@@ -93,10 +123,51 @@
         const initialZoom = 4;
         const map = L.map('map').setView(initialView, initialZoom);
 
+        let allData = [];
+        let activeMarker = null;
+        let clickedMarkers = [];
+        let markerMap = {};
+        let facilityNames = [];
+
+
+        d3.csv(csvFile).then(data => {
+            allData = data;  // Store globally, don't render yet
+        });
+
+
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 18,
             attribution: '© OpenStreetMap contributors, © Carto'
         }).addTo(map);
+
+        //QUIZ - adding in the quiz event handler here
+
+        // Quiz Handler
+        document.getElementById('submit-quiz').addEventListener('click', function() {
+            const carePref = document.getElementById('care-level').value;
+            const spendingPref = document.getElementById('spending-level').value;
+            const scorePref = document.getElementById('score-level').value;
+
+            document.getElementById('quiz-overlay').style.display = 'none';
+
+            const filtered = allData.filter(d => {
+                const careValue = parseFloat(d['CHC/GIP provided (% days)']) || 0;
+                const spendingValue = parseFloat(d['Per-beneficiary spending (U.S. dollars $)'].replace(/[^0-9.]+/g, "")) || 0;
+                const scoreValue = parseFloat(d['Hospice Care Index Overall Score']) || 0;
+
+                const careMatch = carePref === 'any' || (carePref === 'high' && careValue >= 50) || (carePref === 'low' && careValue < 50);
+                const spendingMatch = spendingPref === 'any' || (spendingPref === 'high' && spendingValue >= 10000) || (spendingPref === 'low' && spendingValue < 10000);
+                const scoreMatch = scorePref === 'any' || (scorePref === 'high' && scoreValue >= 8) || (scorePref === 'medium' && scoreValue >= 5 && scoreValue < 8) || (scorePref === 'low' && scoreValue < 5);
+
+                return careMatch && spendingMatch && scoreMatch;
+            });
+
+            clearAllMarkers();
+            filtered.forEach(d => addInteractiveMarker(d));
+        });
+
+
+
 
         const colorScale = d3.scaleLinear().domain([0, 10]).range(["#800080", "#ffff66"]);
 
@@ -110,73 +181,73 @@
             return value;
         }
 
-        d3.csv(csvFile).then(data => {
-            let activeMarker = null;
-            let clickedMarkers = [];
-            const markerMap = {};
-            let facilityNames = []; //adding autocomplete to search bar
+        //creating helper function to save inital interactivity post quiz implementation
+        function addInteractiveMarker(d) {
+            const lat = +d.Latitude;
+            const lon = +d.Longitude;
+            const indexScore = +d['Hospice Care Index Overall Score'];
 
-            data.forEach(d => {
-                const lat = +d.Latitude;
-                const lon = +d.Longitude;
-                const indexScore = +d['Hospice Care Index Overall Score'];
+            if (!isNaN(lat) && !isNaN(lon) && !isNaN(indexScore)) {
+                const color = colorScale(indexScore);
+                const marker = L.circleMarker([lat, lon], {
+                    radius: 6,
+                    fillColor: color,
+                    originalColor: color,
+                    fillOpacity: 0.9,
+                    weight: 0
+                });
 
-                if (!isNaN(lat) && !isNaN(lon) && !isNaN(indexScore)) {
-                    const color = colorScale(indexScore);
+                marker.bindTooltip(`<strong>${d['Facility Name']}</strong><br>${d['City/Town']}, ${d['State']}<br> Hospice Care Score: ${indexScore}/10`, {
+                    direction: 'top',
+                    offset: [0, -5],
+                    opacity: 0.9
+                });
 
-                    const marker = L.circleMarker([lat, lon], {
-                        radius: 6,
-                        fillColor: color,
-                        originalColor: color,
-                        fillOpacity: 0.9,
-                        weight: 0
-                    });
+                marker.on('mouseover', function () {
+                    this.setStyle({ radius: 10 });
+                });
 
-                    marker.bindTooltip(`<strong>${d['Facility Name']}</strong><br>${d['City/Town']}, ${d['State']}<br> Hospice Care Score: ${indexScore}/10`, {
-                        direction: 'top',
-                        offset: [0, -5],
-                        opacity: 0.9
-                    });
+                marker.on('mouseout', function () {
+                    if (this !== activeMarker) {
+                        this.setStyle({ radius: 6 });
+                    }
+                });
 
-                    marker.on('mouseover', function () {
-                        this.setStyle({ radius: 10 });
-                    });
-
-                    marker.on('mouseout', function () {
-                        if (this !== activeMarker) {
-                            this.setStyle({ radius: 6 });
-                        }
-                    });
-
-                    marker.on('click', function () {
-                    //setting marker back to original format after click
+                marker.on('click', function () {
                     clickedMarkers.push(this);
                     if (activeMarker && activeMarker !== this) {
                         activeMarker.setStyle({ weight: 0, radius: 6 });
                     }
-
-                    //making clicked marker have a green border and icnreased size
-                    this.setStyle({weight:1, color:'#ffffff', fillColor: '#00ff99', radius: 13 });
+                    this.setStyle({ weight: 1, color: '#ffffff', fillColor: '#00ff99', radius: 13 });
                     activeMarker = this;
 
-                    // Show info in the side panel
                     infoPanel.style.display = 'block';
                     infoContent.innerHTML = `
-                    <p><strong>Facility Name:</strong> ${formatValue(d['Facility Name'])}</p>
-                    <p><strong>Address:</strong> ${formatValue(d['Address Line 1'])}, ${formatValue(d['City/Town'])}, ${formatValue(d['State'])}</p>
-                    <p><strong>Average Percent of Patient Days with Continuous Homecare:</strong> ${formatValue(d['CHC/GIP provided (% days)'])}%</p>
-                    <p><strong>Hospice Care Score:</strong> ${formatValue(d['Hospice Care Index Overall Score'])}/10.0</p>
-                    <p><strong>Average Nurse Care Time:</strong> ${formatValue(d['Nurse care minutes per routine home care days (minutes)'])} Minutes</p>
-                    <p><strong>Per-Beneficiary Spending (USD):</strong> $${formatValue(d['Per-beneficiary spending (U.S. dollars $)'])}</p>
-                `;
-
+                        <p><strong>Facility Name:</strong> ${formatValue(d['Facility Name'])}</p>
+                        <p><strong>Address:</strong> ${formatValue(d['Address Line 1'])}, ${formatValue(d['City/Town'])}, ${formatValue(d['State'])}</p>
+                        <p><strong>Average Percent of Patient Days with Continuous Homecare:</strong> ${formatValue(d['CHC/GIP provided (% days)'])}%</p>
+                        <p><strong>Hospice Care Score:</strong> ${formatValue(d['Hospice Care Index Overall Score'])}/10.0</p>
+                        <p><strong>Average Nurse Care Time:</strong> ${formatValue(d['Nurse care minutes per routine home care days (minutes)'])} Minutes</p>
+                        <p><strong>Per-Beneficiary Spending (USD):</strong> $${formatValue(d['Per-beneficiary spending (U.S. dollars $)'])}</p>
+                    `;
                 });
 
-                    marker.addTo(map);
-                    markerMap[d['Facility Name'].toLowerCase()] = marker;
-                    facilityNames.push(d['Facility Name']);
+                marker.addTo(map);
+                markerMap[d['Facility Name'].toLowerCase()] = marker;
+                facilityNames.push(d['Facility Name']);
+            }
+        }
+
+        function clearAllMarkers() {
+            map.eachLayer(layer => {
+                if (layer instanceof L.CircleMarker) {
+                    map.removeLayer(layer);
                 }
             });
+            clickedMarkers = [];
+            activeMarker = null;
+        }
+
 
                     //adding an exit feature on the side-bar to clear selection
                     document.getElementById('close-info').addEventListener('click', () => {
@@ -237,12 +308,10 @@
                             fillColor: marker.options.originalColor
                         });
                     });
-                    clickedMarkers = [];
                     activeMarker = null;
                     infoPanel.style.display = 'none';
                 });
 
-        });
 
         //creating map legend
         const legend = L.control({ position: 'bottomright' });
