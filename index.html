@@ -15,6 +15,64 @@
             font-family: Arial, sans-serif;
         }
 
+        select {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            border: 1px solid #00ff99;
+            border-radius: 5px;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            width: 250px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: pointer;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        select:hover, select:focus {
+            border-color: #00cc77;
+            box-shadow: 0 0 5px #00cc77;
+            outline: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { text-shadow: 0 0 5px #00ff99; }
+            50% { text-shadow: 0 0 20px #00ff99; }
+        }
+
+        #quiz-overlay h1 {
+            animation: pulse 2s infinite;
+        }
+
+        #quiz-overlay {
+            transition: opacity 0.5s ease;
+        }
+
+        #quiz-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #suggestions::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #suggestions::-webkit-scrollbar-thumb {
+            background: #00ff99;
+            border-radius: 4px;
+        }
+
+        #suggestions::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        #big-container {
+            display: flex;
+            flex-direction: column;
+        }
+
         #map-container {
             flex: 3;
         }
@@ -38,6 +96,10 @@
         #info-content p {
             margin-bottom: 10px;
             line-height: 1.5;
+        }
+
+        #info-panel {
+            box-shadow: 0 0 15px rgba(0, 255, 153, 0.3);
         }
 
         h1, h2 {
@@ -65,9 +127,104 @@
         #reset-zoom:hover {
             background-color: #00cc77;
         }
+
+        #reset-markers {
+            margin-top: 10px;
+            background-color: #00ff99;
+            color: #121212;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #reset-markers:hover {
+            background-color: #00cc77;
+        }
+
+
+        #show-all {
+            margin-top: 10px;
+            background-color: #00ff99;
+            color: #121212;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #show-all:hover {
+            background-color: #00cc77;
+        }
+
+        #take-quiz-again {
+            margin-top: 10px;
+            background-color: #00ff99;
+            color: #121212;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #take-quiz-again:hover {
+            background-color: #00cc77;
+        }
+
+        button, #search-box {
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        button:hover, button:focus, #search-box:focus {
+            box-shadow: 0 0 5px #00cc77;
+            outline: none;
+        }
+
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                padding: 10px;
+            }
+
+            #map-container {
+                width: 100%;
+            }
+
+            #info-panel {
+                margin-left: 0;
+                margin-top: 20px;
+                width: 100%;
+            }
+        }
+
     </style>
 </head>
 <body>
+    <!-- Help Button -->
+    <div id="help-button" style="position:fixed;top:20px;right:20px;z-index:10000;cursor:pointer;font-size:24px;color:#00ff99;" title="What do these metrics mean?">❔</div>
+
+    <div id="help-popup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1e1e1e;padding:20px;border:2px solid #00ff99;border-radius:8px;z-index:10001;color:#e0e0e0;max-width:500px;max-height:80%;overflow-y:auto;">
+        <h2>Understanding Facility Metrics</h2>
+        <ul>
+            <li><strong>Continuous Home Care Provided:</strong> Percent of patient days where advanced home care was delivered. Higher is typically better for patients preferring to stay home.</li>
+            <li><strong>Hospice Care Score:</strong> Composite quality score (0-10). Higher indicates better overall care quality.</li>
+            <li><strong>Average Nurse Care Time:</strong> Average minutes nurses spend with patients per home care day. More time may indicate more attentive care.</li>
+            <li><strong>Per-Beneficiary Spending:</strong> Average Medicare spending per patient. Higher isn't always better; it can indicate complexity or resource use.</li>
+            <li><strong>Early Live Discharges:</strong> Percent of patients leaving hospice care prematurely. Lower percentages often reflect better eligibility management and care planning.</li>
+        </ul>
+        <hr style="border: 1px solid #00ff99; margin: 15px 0;">
+        <h3>Data Source</h3>
+        <p>
+            Data provided by <strong>data.cms.gov</strong> - Centers for Medicare & Medicaid Services (CMS):<br>
+            <em>Hospice - Provider Data</em><br>
+            A list of hospice providers with data on the quality of patient care measures.<br>
+            <strong>Last Modified:</strong> January 13, 2025<br>
+            <strong>Released:</strong> February 19, 2025<br>
+            <a href="https://data.cms.gov/provider-data/dataset/252m-zfp9" target="_blank" style="color:#00ff99;">View Original Dataset</a>
+        </p>
+        <button id="close-help" style="margin-top:10px;padding:5px 10px;background:#00ff99;color:#121212;border:none;border-radius:4px;cursor:pointer;">Close</button>
+    </div>
     <div id="quiz-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#121212;color:#e0e0e0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
         <h1>How Do You Want Your Loved One to Spend Their Final Days?</h1>
         <p>Use the preferences below to find the right hospice for you</p>
@@ -128,7 +285,7 @@
             </select>
         </label>        
         <label>
-            Continuous Home Care Provided?
+            Continuous Home Care Provided:
             <select id="care-level">
                 <option value="any">No Preference</option>
                 <option value="yes">Yes</option>
@@ -136,7 +293,7 @@
             </select>
         </label>
         <label>
-            Beliefs & Values Addressed (if desired by the patient):
+            Patient's Beliefs & Values Addressed:
             <select id="beliefs-level">
                 <option value="any">No Preference</option>
                 <option value="yes">Yes</option>
@@ -171,6 +328,7 @@
         </label>
         <button id="submit-quiz" style="margin-top:20px;padding:10px 20px;">View Matches</button>
     </div>
+<div id = big-container> 
     <div id="map-container">
         <h1>Hospice Facility Map</h1>
         <p>This map shows the geographic distribution of hospices in the dataset.</p>
@@ -179,18 +337,29 @@
         <button id="search-button" style="padding: 8px 12px; border-radius: 4px; border: none; background-color: #00ff99; color: #121212; cursor: pointer;">Search</button>
         <div id="map"></div>
         <button id="reset-zoom">Reset Zoom</button>
-        <button id="reset-markers" style="margin-left: 10px; background-color: #00ff99; color: #121212; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">Reset Markers</button>
-        <button id="show-all" style="margin-left: 10px; background-color: #00ff99; color: #121212; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;"> Clear Filters </button>
-        <button id="take-quiz-again" style="margin-left: 10px; background-color: #00ff99; color: #121212; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">Take Quiz Again</button>
-
-
-
+        <button id="reset-markers">Reset Markers</button>
+        <button id="show-all" > Clear Filters </button>
+        <button id="take-quiz-again">Take Quiz Again</button>
     </div>
+
+    <div id="static-insights" style="width: 100%; margin-top: 50px; text-align: center;">
+        <h2 style="color: #00ff99;">What the Data Suggests...</h2>
+        <p style="color: #cccccc; max-width: 800px; margin: 0 auto 30px;">
+            Care is Unevenly Distributed — How Do We Value the Last Days? States with the highest Medicare spending do not always provide the highest quality care.
+        </p>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;">
+            <canvas id="facilitiesByState" style="max-width: 300px; max-height: 300px;"></canvas>
+            <canvas id="avgScoreByState" style="max-width: 300px; max-height: 300px;"></canvas>
+            <canvas id="spendingDistribution" style="max-width: 300px; max-height: 300px;"></canvas>
+        </div>
+    </div>
+</div>
     <div id="info-panel">
         <h2>Facility Details <span id="close-info" style="cursor:pointer; float:right;">✖</span></h2>
         <div id="info-content">Click on a facility to view details here.</div>
     </div>    
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
@@ -228,7 +397,7 @@
             const visitsPref = document.getElementById('visits-level').value;
             const scorePref = document.getElementById('score-level').value;
 
-            document.getElementById('quiz-overlay').style.display = 'none';
+            document.getElementById('quiz-overlay').classList.add('hidden');
 
             const filtered = allData.filter(d => {
                 const careValue = parseFloat(d['CHC/GIP provided (% days)']) || 0;
@@ -269,10 +438,73 @@
             });
 
             clearAllMarkers();
-            filtered.forEach(d => addInteractiveMarker(d));
+            filtered.forEach((d, i) => {
+                setTimeout(() => addInteractiveMarker(d), i * 1);  //staggering dropping of markers in animated - esque style lol
+            });
+            renderCharts();
         });
 
+//MAKING CHARTS FUNCTION - EEEK PLS WORK
+        function renderCharts() {
+            // Group by State
+            const stateCounts = {};
+            const stateScores = {};
+            const stateScoreCounts = {};
+            const spendingTiers = { 'Low (< $9000)': 0, 'High (>= $9000)': 0 };
 
+            allData.forEach(d => {
+            const state = d['State'];
+            const score = parseFloat(d['Hospice Care Index Overall Score']) || 0;
+            const spending = parseFloat(d['Per-beneficiary spending (U.S. dollars $)'].replace(/[^0-9.]+/g, "")) || 0;
+
+            stateCounts[state] = (stateCounts[state] || 0) + 1;
+            stateScores[state] = (stateScores[state] || 0) + score;
+            stateScoreCounts[state] = (stateScoreCounts[state] || 0) + 1;
+
+            if (spending < 9000) spendingTiers['Low (< $9000)']++;
+            else spendingTiers['High (>= $9000)']++;
+            });
+
+            const stateLabels = Object.keys(stateCounts);
+            const stateData = stateLabels.map(state => stateCounts[state]);
+            const avgScores = stateLabels.map(state => (stateScores[state] / stateScoreCounts[state]).toFixed(2));
+
+            new Chart(document.getElementById('facilitiesByState'), {
+            type: 'bar',
+            data: {
+                labels: stateLabels,
+                datasets: [{
+                label: 'Total Facilities by State',
+                data: stateData,
+                backgroundColor: '#00ff99'
+                }]
+            }
+            });
+
+            new Chart(document.getElementById('avgScoreByState'), {
+            type: 'bar',
+            data: {
+                labels: stateLabels,
+                datasets: [{
+                label: 'Average Hospice Care Index Score',
+                data: avgScores,
+                backgroundColor: '#00cc77'
+                }]
+            }
+            });
+
+            new Chart(document.getElementById('spendingDistribution'), {
+            type: 'pie',
+            data: {
+                labels: Object.keys(spendingTiers),
+                datasets: [{
+                label: 'Spending Distribution',
+                data: Object.values(spendingTiers),
+                backgroundColor: ['#00ff99', '#00cc77']
+                }]
+            }
+            });
+        }
 
 
         const colorScale = d3.scaleLinear().domain([0, 10]).range(["#800080", "#ffff66"]);
@@ -335,6 +567,7 @@
                         <p><strong>Hospice Care Score:</strong> ${formatValue(d['Hospice Care Index Overall Score'])}/10.0</p>
                         <p><strong>Average Nurse Care Time:</strong> ${formatValue(d['Nurse care minutes per routine home care days (minutes)'])} Minutes</p>
                         <p><strong>Per-Beneficiary Spending (USD):</strong> $${formatValue(d['Per-beneficiary spending (U.S. dollars $)'])}</p>
+                        <p><strong>Early Live Discharges:</strong> ${formatValue(d['Early live discharges (% live discharges)'])}%</p>
                     `;
                 });
 
@@ -431,7 +664,7 @@
             clearAllMarkers();
             activeMarker = null;
             clickedMarkers = [];
-            document.getElementById('quiz-overlay').style.display = 'flex';
+            document.getElementById('quiz-overlay').classList.remove('hidden');
             document.getElementById('info-panel').style.display = 'none';
             map.setView(initialView, initialZoom);
         });
@@ -484,8 +717,19 @@
             }
         });
 
+    
+        //help Button handler - yippee
+        document.getElementById('help-button').addEventListener('click', function() {
+            document.getElementById('help-popup').style.display = 'block';
+        });
+
+        //close help popup handler
+        document.getElementById('close-help').addEventListener('click', function() {
+            document.getElementById('help-popup').style.display = 'none';
+        });
 
     </script>
+
 </body>
 </html>
 
