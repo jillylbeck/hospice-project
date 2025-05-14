@@ -13,6 +13,17 @@
             margin: 0;
             padding: 20px;
             font-family: Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        #layout-wrapper {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            max-width: 100%;;
+            box-sizing: border-box;
+            position: relative;
+            padding: 20px;
         }
 
         select {
@@ -73,8 +84,19 @@
             flex-direction: column;
         }
 
+        #map-and-info {
+            display: flex;
+            justify-content: center;
+            gap: 20px; /* Optional spacing between map and panel */
+            max-width: 2000px; /* Optional width constraint */
+            margin: 0 auto; /* Center container itself */
+            width: 100%;
+        }
         #map-container {
-            flex: 3;
+            width: 100%;
+            max-width: 1200px;
+            justify-content: center; /* Center the entire block horizontally */
+            margin-left: 200px;
         }
 
         #map {
@@ -85,8 +107,8 @@
 
         #info-panel {
             flex: 1;
-            margin-left: 20px;
-            padding: 15px;
+            margin-left: 0px;
+            padding: 1px;
             background-color: #1e1e1e;
             border: 2px solid #00ff99;
             border-radius: 8px;
@@ -328,36 +350,44 @@
         </label>
         <button id="submit-quiz" style="margin-top:20px;padding:10px 20px;">View Matches</button>
     </div>
-<div id = big-container> 
-    <div id="map-container">
-        <h1>Hospice Facility Map</h1>
-        <p>This map shows the geographic distribution of hospices in the dataset.</p>
-        <input type="text" id="search-box" placeholder="Search by Facility Name" style="width: 70%; padding: 8px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #00ff99; background-color: #1e1e1e; color: #e0e0e0;">
-        <div id="suggestions" style="position: relative; width: 70%; background-color: #1e1e1e; border: 1px solid #00ff99; border-top: none; max-height: 150px; overflow-y: auto; display: none; color: #e0e0e0;"></div>
-        <button id="search-button" style="padding: 8px 12px; border-radius: 4px; border: none; background-color: #00ff99; color: #121212; cursor: pointer;">Search</button>
-        <div id="map"></div>
-        <button id="reset-zoom">Reset Zoom</button>
-        <button id="reset-markers">Reset Markers</button>
-        <button id="show-all" > Clear Filters </button>
-        <button id="take-quiz-again">Take Quiz Again</button>
-    </div>
+<div id="layout-wrapper">
 
-    <div id="static-insights" style="width: 100%; margin-top: 50px; text-align: center;">
-        <h2 style="color: #00ff99;">What the Data Suggests...</h2>
-        <p style="color: #cccccc; max-width: 800px; margin: 0 auto 30px;">
-            Care is Unevenly Distributed — How Do We Value the Last Days? States with the highest Medicare spending do not always provide the highest quality care.
-        </p>
-        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;">
-            <canvas id="facilitiesByState" style="max-width: 300px; max-height: 300px;"></canvas>
-            <canvas id="avgScoreByState" style="max-width: 300px; max-height: 300px;"></canvas>
-            <canvas id="spendingDistribution" style="max-width: 300px; max-height: 300px;"></canvas>
+    <div id="page-content" style="display: flex; flex-direction: row; width: 100%;">
+        <div id="big-container" style="flex: 4; display: flex; flex-direction: column; width: 100%;">
+            <div id="map-and-info" style="display: flex; flex-direction: row;">
+            <div id="map-container">
+                <h1>Hospice Facility Map</h1>
+                <p>This map shows the geographic distribution of hospices in the dataset.</p>
+                <input type="text" id="search-box" placeholder="Search by Facility Name" style="width: 70%; padding: 8px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #00ff99; background-color: #1e1e1e; color: #e0e0e0;">
+                <div id="suggestions" style="position: relative; width: 70%; background-color: #1e1e1e; border: 1px solid #00ff99; border-top: none; max-height: 150px; overflow-y: auto; display: none; color: #e0e0e0;"></div>
+                <button id="search-button" style="padding: 8px 12px; border-radius: 4px; border: none; background-color: #00ff99; color: #121212; cursor: pointer;">Search</button>
+                <div id="map"></div>
+                <button id="reset-zoom">Reset Zoom</button>
+                <button id="reset-markers">Reset Markers</button>
+                <button id="show-all" > Clear Filters </button>
+                <button id="take-quiz-again">Take Quiz Again</button>
+            </div>
+
+            <div id="info-panel" style="flex: 1; margin-left: 20px; padding: 15px; background-color: #1e1e1e; border: 2px solid #00ff99; border-radius: 8px; display: none;">
+                <h2>Facility Details <span id="close-info" style="cursor:pointer; float:right;">✖</span></h2>
+                <div id="info-content">Click on a facility to view details here.</div>
+            </div>
+
+            </div>
+            <div id="static-insights" style="width: 100%; margin-top: 50px; text-align: center;">
+                <h2 style="color: #00ff99;">What the Data Suggests...</h2>
+                <p style="color: #cccccc; max-width: 800px; margin: 0 auto 30px;">
+                    Care is Unevenly Distributed — How Do We Value the Last Days? States with the highest Medicare spending do not always provide the highest quality care.
+                </p>
+                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;">
+                    <canvas id="facilitiesByState" style="max-width: 300px; max-height: 300px;"></canvas>
+                    <canvas id="avgScoreByState" style="max-width: 300px; max-height: 300px;"></canvas>
+                    <canvas id="spendingDistribution" style="max-width: 300px; max-height: 300px;"></canvas>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
-    <div id="info-panel">
-        <h2>Facility Details <span id="close-info" style="cursor:pointer; float:right;">✖</span></h2>
-        <div id="info-content">Click on a facility to view details here.</div>
-    </div>    
+    </div> 
+</div> 
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
