@@ -103,7 +103,7 @@
             justify-content: center;
             gap: 20px; 
             max-width: 2000px;
-            margin: 0 auto; /* Center container itself */
+            margin: 0 auto; /* centering container pls work */
             width: 100%;
         }
         #map-container {
@@ -418,6 +418,10 @@
         let markerMap = {};
         let facilityNames = [];
 
+        let facilitiesChart;
+        let avgScoreChart;
+
+
 
         d3.csv(csvFile).then(data => {
             allData = data;  // Store globally, don't render yet
@@ -512,52 +516,60 @@
             const stateData = stateLabels.map(state => stateCounts[state]);
             const avgScores = stateLabels.map(state => (stateScores[state] / stateScoreCounts[state]).toFixed(2));
 
-            new Chart(document.getElementById('facilitiesByState'), {
+            facilitiesChart = new Chart(document.getElementById('facilitiesByState'), {
                 type: 'bar',
                 data: {
                     labels: stateLabels,
                     datasets: [{
                         label: 'Total Facilities by State',
                         data: stateData,
-                        backgroundColor: '#00ff99'
+                        backgroundColor: stateLabels.map(() => '#00ff99')
                     }]
                 },
                 options: {
-                    scales: {
-                        x: {
-                            ticks: {
-                                display: false  // Hides x-axis labels
-                            }
-                        }
-                    }
+                    onClick: (evt, elements) => handleBarClick(evt, elements, facilitiesChart, avgScoreChart),
+                    scales: { x: { ticks: { display: false } } }
                 }
             });
 
-
-            new Chart(document.getElementById('avgScoreByState'), {
-            type: 'bar',
-            data: {
-                labels: stateLabels,
-                datasets: [{
-                label: 'Average Hospice Care Index Score',
-                data: avgScores,
-                backgroundColor: '#00cc77'
-                }]
-            }
-            });
-
-            new Chart(document.getElementById('spendingDistribution'), {
-            type: 'pie',
-            data: {
-                labels: Object.keys(spendingTiers),
-                datasets: [{
-                label: 'Spending Distribution',
-                data: Object.values(spendingTiers),
-                backgroundColor: ['#00ff99', '#00cc77']
-                }]
-            }
+            avgScoreChart = new Chart(document.getElementById('avgScoreByState'), {
+                type: 'bar',
+                data: {
+                    labels: stateLabels,
+                    datasets: [{
+                        label: 'Average Hospice Care Index Score',
+                        data: avgScores,
+                        backgroundColor: stateLabels.map(() => '#00cc77')
+                    }]
+                },
+                options: {
+                    onClick: (evt, elements) => handleBarClick(evt, elements, avgScoreChart, facilitiesChart),
+                    scales: { x: { ticks: { display: false } } }
+                }
             });
         }
+
+        //making comparison bar highlight function 
+        function handleBarClick(evt, elements, sourceChart, targetChart) {
+            if (!elements.length) return;
+            const index = elements[0].index;
+            const state = sourceChart.data.labels[index];
+
+            //reset bar colors
+            sourceChart.data.datasets[0].backgroundColor = sourceChart.data.labels.map(() => sourceChart.data.datasets[0].backgroundColor instanceof Array ? sourceChart.data.datasets[0].backgroundColor[0] : sourceChart.data.datasets[0].backgroundColor);
+            targetChart.data.datasets[0].backgroundColor = targetChart.data.labels.map(() => targetChart.data.datasets[0].backgroundColor instanceof Array ? targetChart.data.datasets[0].backgroundColor[0] : targetChart.data.datasets[0].backgroundColor);
+
+            //highlight the clicked bar in both charts
+            sourceChart.data.datasets[0].backgroundColor[index] = '#ffffff';
+            const targetIndex = targetChart.data.labels.indexOf(state);
+            if (targetIndex !== -1) {
+                targetChart.data.datasets[0].backgroundColor[targetIndex] = '#ffffff';
+            }
+
+            sourceChart.update();
+            targetChart.update();
+        }
+
 
 
         const colorScale = d3.scaleLinear().domain([0, 10]).range(["#800080", "#ffff66"]);
